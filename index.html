@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>An Important Question</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        /* --- CORE STYLES --- */
+        :root {
+            --bg-color: #ffe6e6;
+            --primary: #ff4d6d;
+            --paper: #fffdf0;
+            --text: #590d22;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: var(--bg-color);
+            font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif; /* Playful font */
+            overflow-x: hidden;
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* --- FLOATING HEARTS BG --- */
+        .heart-bg {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+        .heart {
+            position: absolute;
+            font-size: 20px;
+            color: rgba(255, 77, 109, 0.3);
+            animation: float 10s infinite linear;
+        }
+        @keyframes float {
+            0% { transform: translateY(100vh) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(-10vh) rotate(360deg); opacity: 0; }
+        }
+
+        /* --- CONTAINER --- */
+        .container {
+            z-index: 10;
+            width: 90%;
+            max-width: 400px;
+            padding-bottom: 100px; /* Space for buttons */
+        }
+
+        /* --- DRAMATIC SCROLL --- */
+        .scroll-paper {
+            background: var(--paper);
+            margin-top: 40px;
+            padding: 30px 20px;
+            border-radius: 5px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            position: relative;
+            text-align: center;
+            border-top: 10px solid #e3d2b0;
+            border-bottom: 10px solid #e3d2b0;
+        }
+        
+        .scroll-paper::before, .scroll-paper::after {
+            content: '';
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 110%;
+            height: 20px;
+            background: #cfb993;
+            border-radius: 20px;
+            box-shadow: 0 5px 10px rgba(0,0,0,0.2);
+        }
+        .scroll-paper::before { top: -15px; }
+        .scroll-paper::after { bottom: -15px; }
+
+        h1 { margin-top: 0; color: var(--primary); font-size: 1.8rem; }
+        
+        /* --- MEMORY GALLERY --- */
+        .gallery {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        .photo-slot {
+            background: #eee;
+            aspect-ratio: 1/1;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+            font-size: 0.8rem;
+            overflow: hidden;
+            border: 3px solid white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .photo-slot img { width: 100%; height: 100%; object-fit: cover; }
+
+        /* --- FUNNY REASONS LIST --- */
+        .reasons {
+            text-align: left;
+            background: rgba(255,255,255,0.6);
+            padding: 15px;
+            border-radius: 15px;
+            margin-top: 20px;
+        }
+        .reasons ul { padding-left: 20px; }
+        .reasons li { margin-bottom: 8px; }
+
+        /* --- BUTTONS --- */
+        .btn-container {
+            position: fixed;
+            bottom: 20px;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            z-index: 100;
+            pointer-events: none; /* Allow clicks to pass through empty space */
+        }
+
+        button {
+            pointer-events: auto;
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            transition: transform 0.2s;
+        }
+
+        .yes-btn {
+            background-color: var(--primary);
+            color: white;
+            font-size: 1.5rem; /* Bigger */
+        }
+        .yes-btn:active { transform: scale(0.95); }
+
+        .no-btn {
+            background-color: #fff;
+            color: var(--text);
+            position: absolute; /* Allows it to move freely */
+            transition: all 0.1s ease; /* Fast movement */
+        }
+
+        /* --- MUSIC TOGGLE --- */
+        .music-toggle {
+            position: fixed;
+            top: 10px; right: 10px;
+            background: white;
+            padding: 10px;
+            border-radius: 50%;
+            font-size: 20px;
+            cursor: pointer;
+            z-index: 200;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        /* --- CELEBRATION OVERLAY --- */
+        .celebration {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: none; /* Hidden by default */
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            z-index: 999;
+            text-align: center;
+        }
+        .celebration h1 { color: #ff4d6d; font-size: 3rem; margin-bottom: 10px; }
+        .celebration p { font-size: 1.5rem; }
+    </style>
+</head>
+<body>
+
+    <div class="heart-bg" id="heartBg"></div>
+
+    <div class="music-toggle" onclick="toggleMusic()">🎵</div>
+    <audio id="bgMusic" loop>
+        <source src="https://www.bensound.com/bensound-music/bensound-cute.mp3" type="audio/mpeg">
+    </audio>
+
+    <div class="container">
+        <div class="scroll-paper">
+            <h1>📜 Official Treaty 📜</h1>
+            <p><strong>To:</strong> My Favorite Human<br><strong>From:</strong> Your Biggest Fan</p>
+            
+            <p>I hereby propose a merger of our weekends for this Valentine's week.</p>
+            
+            <div class="gallery">
+                <div class="photo-slot"><img src="https://placehold.co/200x200/ffb3b3/white?text=Us+Being+Silly" alt="Memory"></div>
+                <div class="photo-slot"><img src="https://placehold.co/200x200/ffb3b3/white?text=Food+Dates" alt="Memory"></div>
+                <div class="photo-slot"><img src="https://placehold.co/200x200/ffb3b3/white?text=Inside+Jokes" alt="Memory"></div>
+                <div class="photo-slot"><img src="https://placehold.co/200x200/ffb3b3/white?text=Good+Times" alt="Memory"></div>
+            </div>
+
+            <div class="reasons">
+                <h3>Terms & Conditions (Why You Should Say Yes):</h3>
+                <ul>
+                    <li>🍕 I will share my food (mostly).</li>
+                    <li>🕷️ I will kill the spiders.</li>
+                    <li>📸 I know your good angles.</li>
+                    <li>😂 I'm technically hilarious.</li>
+                </ul>
+            </div>
+            
+            <p style="margin-top:20px; font-weight:bold; font-size:1.2rem;">Will you be my Valentine?</p>
+        </div>
+    </div>
+
+    <div class="btn-container">
+        <button class="yes-btn" onclick="sayYes()">YES! 😍</button>
+        <button class="no-btn" id="noBtn" onmouseover="moveButton()" ontouchstart="moveButton()">No 🏃‍♂️</button>
+    </div>
+
+    <div class="celebration" id="celebrationScreen">
+        <h1>SHE SAID YES!</h1>
+        <p>Prepare for nuggets and attention. 🎉</p>
+        <p style="font-size: 1rem; margin-top: 20px;">(Screenshot this and send it to me)</p>
+    </div>
+
+    <script>
+        // 1. GENERATE FLOATING HEARTS
+        function createHearts() {
+            const container = document.getElementById('heartBg');
+            for(let i=0; i<15; i++) {
+                const heart = document.createElement('div');
+                heart.classList.add('heart');
+                heart.innerHTML = '❤️';
+                heart.style.left = Math.random() * 100 + 'vw';
+                heart.style.animationDuration = (Math.random() * 5 + 5) + 's';
+                heart.style.fontSize = (Math.random() * 20 + 10) + 'px';
+                container.appendChild(heart);
+            }
+        }
+        createHearts();
+
+        // 2. THE ESCAPING "NO" BUTTON
+        const noBtn = document.getElementById('noBtn');
+        let moveCount = 0;
+
+        function moveButton() {
+            moveCount++;
+            
+            // Calculate random position within the viewport
+            // We use 80% to keep it away from the very edges
+            const x = Math.random() * (window.innerWidth - noBtn.offsetWidth);
+            const y = Math.random() * (window.innerHeight - noBtn.offsetHeight);
+
+            noBtn.style.position = 'fixed';
+            noBtn.style.left = x + 'px';
+            noBtn.style.top = y + 'px';
+
+            // Optional: Make it faster or smaller the more she tries
+            if (moveCount > 5) {
+                noBtn.innerText = "Nice Try! 👻";
+            }
+        }
+
+        // 3. THE "YES" CELEBRATION
+        function sayYes() {
+            // Trigger Confetti
+            var duration = 3000;
+            var end = Date.now() + duration;
+
+            (function frame() {
+                confetti({
+                    particleCount: 5,
+                    angle: 60,
+                    spread: 55,
+                    origin: { x: 0 },
+                    colors: ['#ff4d6d', '#ffb3b3']
+                });
+                confetti({
+                    particleCount: 5,
+                    angle: 120,
+                    spread: 55,
+                    origin: { x: 1 },
+                    colors: ['#ff4d6d', '#ffb3b3']
+                });
+
+                if (Date.now() < end) {
+                    requestAnimationFrame(frame);
+                }
+            }());
+
+            // Show Celebration Screen
+            setTimeout(() => {
+                document.getElementById('celebrationScreen').style.display = 'flex';
+                // Try to play sound effect if possible
+                document.getElementById('bgMusic').volume = 1.0; 
+                document.getElementById('bgMusic').play().catch(e => console.log("Audio requires interaction"));
+            }, 500);
+        }
+
+        // 4. MUSIC TOGGLE
+        function toggleMusic() {
+            const audio = document.getElementById('bgMusic');
+            if (audio.paused) {
+                audio.play();
+                document.querySelector('.music-toggle').innerText = '🔈';
+            } else {
+                audio.pause();
+                document.querySelector('.music-toggle').innerText = '🎵';
+            }
+        }
+    </script>
+</body>
+</html>
